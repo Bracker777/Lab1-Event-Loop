@@ -1,12 +1,19 @@
-import { createShip, integrate } from '../src/sim/ship.js'
-import { wrapShip } from '../src/sim/arena.js'
+import { Ship } from '../src/sim/ship.js'
+import { Vector2 } from '../src/sim/vector.js'
+import { wrap } from '../src/sim/arena.js'
 
 const width = 1280
 const height = 720
-const hold = { isDown: (code) => code === 'KeyW' }
+const hold = { thrust: true }
+
+function stepShip(ship, dt) {
+  ship.control(hold, dt)
+  ship.pos = ship.pos.add(ship.vel.scale(dt))
+  ship.pos = new Vector2(wrap(ship.pos.x, width), wrap(ship.pos.y, height))
+}
 
 function run(variable, seconds = 5) {
-  const ship = createShip(width / 2, height / 2)
+  const ship = new Ship({ pos: new Vector2(width / 2, height / 2) })
   const step = 1 / 60
   let t = 0
   let steps = 0
@@ -16,8 +23,7 @@ function run(variable, seconds = 5) {
     let i = 0
     while (t < seconds) {
       const dt = dts[i % dts.length]
-      integrate(ship, hold, dt)
-      wrapShip(ship, width, height)
+      stepShip(ship, dt)
       t += dt
       steps++
       i++
@@ -25,8 +31,7 @@ function run(variable, seconds = 5) {
   } else {
     const n = Math.round(seconds / step)
     for (let i = 0; i < n; i++) {
-      integrate(ship, hold, step)
-      wrapShip(ship, width, height)
+      stepShip(ship, step)
       steps++
     }
     t = n * step
@@ -36,11 +41,11 @@ function run(variable, seconds = 5) {
     mode: variable ? 'variable' : 'fixed',
     t,
     steps,
-    x: ship.x,
-    y: ship.y,
-    vx: ship.vx,
-    vy: ship.vy,
-    speed: Math.hypot(ship.vx, ship.vy),
+    x: ship.pos.x,
+    y: ship.pos.y,
+    vx: ship.vel.x,
+    vy: ship.vel.y,
+    speed: ship.vel.length(),
   }
 }
 
